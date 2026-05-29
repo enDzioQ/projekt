@@ -189,22 +189,22 @@ flush table inet nftctl
 
 table inet nftctl {
     set blacklist_v4 {
-        type ipv4_addr
+        type ipv4_addr;
         elements = { ${ipv4_elements} }
     }
 
     set blacklist_v6 {
-        type ipv6_addr
+        type ipv6_addr;
         elements = { ${ipv6_elements} }
     }
 
     set allow_tcp_ports {
-        type inet_service
+        type inet_service;
         elements = { ${tcp_elements} }
     }
 
     set allow_udp_ports {
-        type inet_service
+        type inet_service;
         elements = { ${udp_elements} }
     }
 

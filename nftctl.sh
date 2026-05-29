@@ -189,12 +189,12 @@ generate_ruleset() {
     for ip in "${BLACKLISTED_IPS_V4[@]:-}"; do
         printf -v input_blacklist_rules '%s        ip saddr %s counter drop\n' "$input_blacklist_rules" "$ip"
         printf -v output_blacklist_rules '%s        ip daddr %s counter drop\n' "$output_blacklist_rules" "$ip"
-    fi
+    done
 
     for ip in "${BLACKLISTED_IPS_V6[@]:-}"; do
         printf -v input_blacklist_rules '%s        ip6 saddr %s counter drop\n' "$input_blacklist_rules" "$ip"
         printf -v output_blacklist_rules '%s        ip6 daddr %s counter drop\n' "$output_blacklist_rules" "$ip"
-    fi
+    done
 
     if [[ -n "$tcp_elements" ]]; then
         allow_tcp_block="        elements = { ${tcp_elements} }"

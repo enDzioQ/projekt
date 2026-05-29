@@ -174,27 +174,26 @@ generate_ruleset() {
     local policy="accept"
     [[ "$FIREWALL_MODE" == "strict" ]] && policy="drop"
 
-    local ipv4_elements
-    local ipv6_elements
     local tcp_elements
     local udp_elements
 
-    ipv4_elements="$(join_by ', ' "${BLACKLISTED_IPS_V4[@]:-}")"
-    ipv6_elements="$(join_by ', ' "${BLACKLISTED_IPS_V6[@]:-}")"
     tcp_elements="$(join_by ', ' "${WHITELISTED_TCP_PORTS[@]:-}")"
     udp_elements="$(join_by ', ' "${WHITELISTED_UDP_PORTS[@]:-}")"
 
-    local blacklist_v4_block=""
-    local blacklist_v6_block=""
+    local input_blacklist_rules=""
+    local output_blacklist_rules=""
     local allow_tcp_block=""
     local allow_udp_block=""
 
-    if [[ -n "$ipv4_elements" ]]; then
-        blacklist_v4_block="        elements = { ${ipv4_elements} }"
+    local ip
+    for ip in "${BLACKLISTED_IPS_V4[@]:-}"; do
+        printf -v input_blacklist_rules '%s        ip saddr %s counter drop\n' "$input_blacklist_rules" "$ip"
+        printf -v output_blacklist_rules '%s        ip daddr %s counter drop\n' "$output_blacklist_rules" "$ip"
     fi
 
-    if [[ -n "$ipv6_elements" ]]; then
-        blacklist_v6_block="        elements = { ${ipv6_elements} }"
+    for ip in "${BLACKLISTED_IPS_V6[@]:-}"; do
+        printf -v input_blacklist_rules '%s        ip6 saddr %s counter drop\n' "$input_blacklist_rules" "$ip"
+        printf -v output_blacklist_rules '%s        ip6 daddr %s counter drop\n' "$output_blacklist_rules" "$ip"
     fi
 
     if [[ -n "$tcp_elements" ]]; then
@@ -207,16 +206,6 @@ generate_ruleset() {
 
     cat <<EOF
 table inet nftctl {
-    set blacklist_v4 {
-        type ipv4_addr;
-${blacklist_v4_block}
-    }
-
-    set blacklist_v6 {
-        type ipv6_addr;
-${blacklist_v6_block}
-    }
-
     set allow_tcp_ports {
         type inet_service;
 ${allow_tcp_block}
@@ -229,9 +218,7 @@ ${allow_udp_block}
 
     chain input {
         type filter hook input priority 0; policy ${policy};
-        ip saddr @blacklist_v4 drop
-        ip6 saddr @blacklist_v6 drop
-        ct state established,related accept
+${input_blacklist_rules}        ct state established,related accept
         ct state invalid drop
         iif "lo" accept
         tcp dport @allow_tcp_ports accept
@@ -242,9 +229,7 @@ ${allow_udp_block}
 
     chain output {
         type filter hook output priority 0; policy accept;
-        ip daddr @blacklist_v4 drop
-        ip6 daddr @blacklist_v6 drop
-        ct state established,related accept
+${output_blacklist_rules}        ct state established,related accept
         ct state invalid drop
         oif "lo" accept
     }

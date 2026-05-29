@@ -178,8 +178,21 @@ generate_ruleset() {
     local tcp_elements
     local udp_elements
 
-    tcp_elements="$(join_by ', ' "${WHITELISTED_TCP_PORTS[@]:-}")"
-    udp_elements="$(join_by ', ' "${WHITELISTED_UDP_PORTS[@]:-}")"
+    # Usuń ewentualne puste elementy z whitelist
+    local filtered_tcp=()
+    local filtered_udp=()
+    local p
+    for p in "${WHITELISTED_TCP_PORTS[@]:-}"; do
+        [[ -n "${p}" ]] || continue
+        filtered_tcp+=("$p")
+    done
+    for p in "${WHITELISTED_UDP_PORTS[@]:-}"; do
+        [[ -n "${p}" ]] || continue
+        filtered_udp+=("$p")
+    done
+
+    tcp_elements="$(join_by ', ' "${filtered_tcp[@]:-}")"
+    udp_elements="$(join_by ', ' "${filtered_udp[@]:-}")"
 
     local input_blacklist_rules=""
     local output_blacklist_rules=""

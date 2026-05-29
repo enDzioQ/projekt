@@ -239,6 +239,15 @@ ${allow_udp_block}
         icmp type { echo-request, echo-reply, destination-unreachable, time-exceeded, parameter-problem } accept
         icmpv6 type { echo-request, echo-reply, destination-unreachable, packet-too-big, time-exceeded, parameter-problem } accept
     }
+
+    chain output {
+        type filter hook output priority 0; policy accept;
+        ct state established,related accept
+        ct state invalid drop
+        oif "lo" accept
+        ip daddr @blacklist_v4 drop
+        ip6 daddr @blacklist_v6 drop
+    }
 }
 EOF
 }

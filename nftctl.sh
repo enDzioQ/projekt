@@ -46,7 +46,6 @@ require_root() {
         fatal "Uruchom ten skrypt jako root, np. przez: sudo $0"
     fi
 }
-
 require_nft() {
     command -v nft >/dev/null 2>&1 || fatal "Brak polecenia nft. Zainstaluj nftables."
 }
@@ -182,6 +181,7 @@ generate_ruleset() {
 
     local input_blacklist_rules=""
     local output_blacklist_rules=""
+    local forward_blacklist_rules=""
     local allow_tcp_block=""
     local allow_udp_block=""
 
@@ -190,12 +190,16 @@ generate_ruleset() {
         [[ -n "$ip" ]] || continue
         printf -v input_blacklist_rules '%s        ip saddr %s drop\n' "$input_blacklist_rules" "$ip"
         printf -v output_blacklist_rules '%s        ip daddr %s drop\n' "$output_blacklist_rules" "$ip"
+        printf -v forward_blacklist_rules '%s        ip saddr %s drop\n' "$forward_blacklist_rules" "$ip"
+        printf -v forward_blacklist_rules '%s        ip daddr %s drop\n' "$forward_blacklist_rules" "$ip"
     done
 
     for ip in "${BLACKLISTED_IPS_V6[@]}"; do
         [[ -n "$ip" ]] || continue
         printf -v input_blacklist_rules '%s        ip6 saddr %s drop\n' "$input_blacklist_rules" "$ip"
         printf -v output_blacklist_rules '%s        ip6 daddr %s drop\n' "$output_blacklist_rules" "$ip"
+        printf -v forward_blacklist_rules '%s        ip6 saddr %s drop\n' "$forward_blacklist_rules" "$ip"
+        printf -v forward_blacklist_rules '%s        ip6 daddr %s drop\n' "$forward_blacklist_rules" "$ip"
     done
 
     if [[ -n "$tcp_elements" ]]; then
@@ -235,6 +239,12 @@ ${output_blacklist_rules}        ct state established,related accept
         ct state invalid drop
         oif "lo" accept
     }
+
+    chain forward {
+        type filter hook forward priority 0; policy accept;
+${forward_blacklist_rules}        ct state established,related accept
+        ct state invalid drop
+    }
 }
 EOF
 }
@@ -259,7 +269,8 @@ split_ips() {
     BLACKLISTED_IPS_V6=()
 
     local ip
-    for ip in "${BLACKLISTED_IPS[@]:-}"; do
+    for ip in "${BLACKLISTED_IPS[@]}"; do
+        [[ -n "$ip" ]] || continue
         if is_ipv4 "$ip"; then
             BLACKLISTED_IPS_V4+=("$ip")
         else

@@ -229,11 +229,11 @@ ${allow_udp_block}
 
     chain input {
         type filter hook input priority 0; policy ${policy};
+        ip saddr @blacklist_v4 drop
+        ip6 saddr @blacklist_v6 drop
         ct state established,related accept
         ct state invalid drop
         iif "lo" accept
-        ip saddr @blacklist_v4 drop
-        ip6 saddr @blacklist_v6 drop
         tcp dport @allow_tcp_ports accept
         udp dport @allow_udp_ports accept
         icmp type { echo-request, echo-reply, destination-unreachable, time-exceeded, parameter-problem } accept
@@ -242,11 +242,11 @@ ${allow_udp_block}
 
     chain output {
         type filter hook output priority 0; policy accept;
+        ip daddr @blacklist_v4 drop
+        ip6 daddr @blacklist_v6 drop
         ct state established,related accept
         ct state invalid drop
         oif "lo" accept
-        ip daddr @blacklist_v4 drop
-        ip6 daddr @blacklist_v6 drop
     }
 }
 EOF

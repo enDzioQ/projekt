@@ -184,28 +184,49 @@ generate_ruleset() {
     tcp_elements="$(join_by ', ' "${WHITELISTED_TCP_PORTS[@]:-}")"
     udp_elements="$(join_by ', ' "${WHITELISTED_UDP_PORTS[@]:-}")"
 
+    local blacklist_v4_block=""
+    local blacklist_v6_block=""
+    local allow_tcp_block=""
+    local allow_udp_block=""
+
+    if [[ -n "$ipv4_elements" ]]; then
+        blacklist_v4_block="        elements = { ${ipv4_elements} }"
+    fi
+
+    if [[ -n "$ipv6_elements" ]]; then
+        blacklist_v6_block="        elements = { ${ipv6_elements} }"
+    fi
+
+    if [[ -n "$tcp_elements" ]]; then
+        allow_tcp_block="        elements = { ${tcp_elements} }"
+    fi
+
+    if [[ -n "$udp_elements" ]]; then
+        allow_udp_block="        elements = { ${udp_elements} }"
+    fi
+
     cat <<EOF
 flush table inet nftctl
 
 table inet nftctl {
     set blacklist_v4 {
         type ipv4_addr;
-        elements = { ${ipv4_elements} }
+${blacklist_v4_block}
     }
 
     set blacklist_v6 {
         type ipv6_addr;
-        elements = { ${ipv6_elements} }
+${blacklist_v6_block}
     }
 
     set allow_tcp_ports {
         type inet_service;
-        elements = { ${tcp_elements} }
+${allow_tcp_block}
     }
 
     set allow_udp_ports {
         type inet_service;
-        elements = { ${udp_elements} }
+${allow_udp_block}
     }
 
     chain input {

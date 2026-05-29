@@ -241,9 +241,11 @@ ${output_blacklist_rules}        ct state established,related accept
     }
 
     chain forward {
-        type filter hook forward priority 0; policy accept;
+        type filter hook forward priority 0; policy ${policy};
 ${forward_blacklist_rules}        ct state established,related accept
         ct state invalid drop
+        tcp dport @allow_tcp_ports accept
+        udp dport @allow_udp_ports accept
     }
 }
 EOF

@@ -186,12 +186,14 @@ generate_ruleset() {
     local allow_udp_block=""
 
     local ip
-    for ip in "${BLACKLISTED_IPS_V4[@]:-}"; do
+    for ip in "${BLACKLISTED_IPS_V4[@]}"; do
+        [[ -n "$ip" ]] || continue
         printf -v input_blacklist_rules '%s        ip saddr %s drop\n' "$input_blacklist_rules" "$ip"
         printf -v output_blacklist_rules '%s        ip daddr %s drop\n' "$output_blacklist_rules" "$ip"
     done
 
-    for ip in "${BLACKLISTED_IPS_V6[@]:-}"; do
+    for ip in "${BLACKLISTED_IPS_V6[@]}"; do
+        [[ -n "$ip" ]] || continue
         printf -v input_blacklist_rules '%s        ip6 saddr %s drop\n' "$input_blacklist_rules" "$ip"
         printf -v output_blacklist_rules '%s        ip6 daddr %s drop\n' "$output_blacklist_rules" "$ip"
     done

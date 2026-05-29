@@ -172,6 +172,8 @@ backup_live_ruleset() {
 generate_ruleset() {
     local policy="accept"
     [[ "$FIREWALL_MODE" == "strict" ]] && policy="drop"
+    # Domyślnie blokuj wszystkie porty na forward; whitelisty je dopuszczą
+    local forward_policy="drop"
 
     local tcp_elements
     local udp_elements
@@ -241,7 +243,7 @@ ${output_blacklist_rules}        ct state established,related accept
     }
 
     chain forward {
-        type filter hook forward priority 0; policy ${policy};
+        type filter hook forward priority 0; policy ${forward_policy};
 ${forward_blacklist_rules}        ct state established,related accept
         ct state invalid drop
         tcp dport @allow_tcp_ports accept

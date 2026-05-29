@@ -206,8 +206,6 @@ generate_ruleset() {
     fi
 
     cat <<EOF
-flush table inet nftctl
-
 table inet nftctl {
     set blacklist_v4 {
         type ipv4_addr;
@@ -249,6 +247,8 @@ apply_rules() {
     require_root
     require_nft
     backup_live_ruleset
+
+    nft delete table "$TABLE_FAMILY" "$TABLE_NAME" 2>/dev/null || true
 
     local tmp_rules
     tmp_rules="$(mktemp)"
